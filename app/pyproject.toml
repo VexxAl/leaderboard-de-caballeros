@@ -1,7 +1,19 @@
 [project]
-name = "app"
-version = "0.1.0"
-description = "Add your description here"
+name = "leaderboard-caballeros"
+version = "0.0.1"
+description = "Sistema de Gamificación y Tracking para Noches de Juegos de Mesa"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+
+authors = [
+    {name = "VexxAl", email = "valentinalderete19@gmail.com"}
+]
+
+dependencies = [
+    "pandas>=2.3.3",
+    "pg8000>=1.31.5",
+    "psycopg2-binary>=2.9.11",
+    "python-dotenv>=1.2.1",
+    "sqlalchemy>=2.0.45",
+    "streamlit>=1.52.2",
+]
