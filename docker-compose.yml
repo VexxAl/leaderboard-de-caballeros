@@ -1,18 +1,61 @@
 version: '3.8'
 
 services:
+  # --- SERVICIO DE BASE DE DATOS ---
   db:
     image: postgres:15-alpine
     container_name: caballeros_db
+    restart: always
     environment:
-      POSTGRES_USER: ${DB_USER}      # <--- Lee del .env
-      POSTGRES_PASSWORD: ${DB_PASSWORD} # <--- Lee del .env
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "${DB_PORT}:5432"            # <--- Lee del .env (5433)
+      # ZONA LEADERBOARD: Puerto Externo 5450 -> Interno 5432
+      # Usa el 5450 para conectarte con DBeaver/PgAdmin desde tu casa.
+      - "5450:5432"
     volumes:
+      # Persistencia de datos (para no perder nada si reinicias)
       - postgres_data:/var/lib/postgresql/data
+      # Script de inicio (solo corre la primera vez que se crea la DB)
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- SERVICIO DE APLICACIÓN (STREAMLIT) ---
+  app:
+    image: python:3.10-slim
+    container_name: caballeros_app
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # ZONA LEADERBOARD: Puerto Externo 8505 -> Interno 8501
+      # Entrarás por http://TU_IP:8505
+      - "8505:8501"
+    environment:
+      # Forzamos la conexión interna explícitamente para evitar errores
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    volumes:
+      # Montamos el código actual dentro del contenedor
+      - .:/app
+    working_dir: /app
+    # COMANDO DE ARRANQUE:
+    # 1. Instala uv (gestor de paquetes rápido)
+    # 2. Sincroniza las librerías exactas desde uv.lock
+    # 3. Levanta Streamlit
+    command: >
+      bash -c "pip install uv && 
+               uv sync && 
+               uv run streamlit run app/main.py --server.port=8501 --server.address=0.0.0.0"
 
 volumes:
   postgres_data:
