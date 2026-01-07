@@ -1,6 +1,6 @@
 [project]
 name = "leaderboard-caballeros"
-version = "0.0.1"
+version = "0.1.0"
 description = "Sistema de Gamificación y Tracking para Noches de Juegos de Mesa"
 readme = "README.md"
 requires-python = ">=3.14"
