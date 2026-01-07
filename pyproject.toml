@@ -7,7 +7,7 @@ name = "leaderboard-caballeros"
 description = "Sistema de Gamificación y Tracking para Noches de Juegos de Mesa"
 dynamic = ["version"]
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 
 authors = [
     {name = "VexxAl", email = "valentinalderete19@gmail.com"}
@@ -22,6 +22,10 @@ dependencies = [
     "streamlit>=1.52.2",
 ]
 
-# Configuración para Hatch
+# Esto permite leer la versión desde Git
 [tool.hatch.version]
 source = "vcs"
+
+# Explicitamos que el código está en "app"
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

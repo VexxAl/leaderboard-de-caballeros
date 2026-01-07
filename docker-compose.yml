@@ -53,7 +53,8 @@ services:
     # 2. Sincroniza las librerías exactas desde uv.lock
     # 3. Levanta Streamlit
     command: >
-      bash -c "pip install uv && 
+      bash -c "apt-get update && apt-get install -y git && 
+               pip install uv && 
                uv sync && 
                uv run streamlit run app/main.py --server.port=8501 --server.address=0.0.0.0"
 

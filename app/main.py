@@ -2,12 +2,25 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine, text
 from datetime import date
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 # --- CONFIGURACIÓN ---
-st.set_page_config(page_title="Noche de Caballeros", page_icon="⚔️", layout="wide") # Layout wide para ver mejor las tablas
+st.set_page_config(page_title="Noche de Caballeros", page_icon="⚔️", layout="wide")
 
-# CONEXIÓN (Mantenemos tu puerto 5433)
-DB_URL = "postgresql+pg8000://admin:password123@localhost:5433/leaderboard_db"
+# CONEXIÓN DINÁMICA
+# Los segundos valores son los "defaults" por si no hay .env
+db_user = os.getenv("DB_USER", "admin")
+db_pass = os.getenv("DB_PASSWORD", "password123")
+db_host = os.getenv("DB_HOST", "localhost")  # En Docker esto será "db"
+db_port = os.getenv("DB_PORT", "5433")       # En Docker esto será "5432"
+db_name = os.getenv("DB_NAME", "leaderboard_db")
+
+# URL con las variables
+DB_URL = f"postgresql+pg8000://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
 
 @st.cache_resource
 def get_engine():
@@ -83,12 +96,12 @@ with tab_carga:
                 st.error(f"Error al guardar: {e}")
 
 # ==============================================================================
-# PESTAÑA 2: ESTADÍSTICAS (¡La Magia!)
+# PESTAÑA 2: ESTADÍSTICAS
 # ==============================================================================
 with tab_stats:
     st.header("📊 Estadísticas Generales")
     
-    # QUERY MAESTRA: Calcula todo en SQL directamente
+    # QUERY: Calcula todo en SQL directamente
     sql_stats = """
     SELECT 
         p.name as "Caballero",
@@ -138,7 +151,7 @@ with tab_stats:
         st.error(f"Error calculando stats: {e}")
 
 # ==============================================================================
-# PESTAÑA 3: HISTORIAL (Lo que arreglamos antes)
+# PESTAÑA 3: HISTORIAL
 # ==============================================================================
 with tab_historial:
     st.header("📜 Historial de Batallas")
