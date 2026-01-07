@@ -1,7 +1,11 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
 [project]
 name = "leaderboard-caballeros"
-version = "0.1.0"
 description = "Sistema de Gamificación y Tracking para Noches de Juegos de Mesa"
+dynamic = ["version"]
 readme = "README.md"
 requires-python = ">=3.14"
 
@@ -17,3 +21,7 @@ dependencies = [
     "sqlalchemy>=2.0.45",
     "streamlit>=1.52.2",
 ]
+
+# Configuración para Hatch
+[tool.hatch.version]
+source = "vcs"
