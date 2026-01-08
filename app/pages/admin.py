@@ -61,9 +61,10 @@ with tab_caballeros:
             # Validamos que al menos tenga nombre y nick
             if new_name and new_nick:
                 try:
+                    favgame_id = game_map[new_favgame]
                     with engine.connect() as conn:
                         query = text("""
-                            INSERT INTO players (name, nickname, birth_date, favorite_game, owned_games, role, active, created_at) 
+                            INSERT INTO players (name, nickname, birth_date, favgame_id, owned_games, role, active, created_at) 
                             VALUES (:n, :nick, :b, :f, :o, :r, TRUE, NOW())
                         """)
                         
@@ -72,7 +73,7 @@ with tab_caballeros:
                             "n": new_name, 
                             "nick": new_nick,
                             "b": new_birth,
-                            "f": new_favgame,
+                            "f": favgame_id,
                             "o": new_ownedgames,
                             "r": new_role
                         })
@@ -91,8 +92,9 @@ with tab_caballeros:
     with engine.connect() as conn:
         # Actualizamos el SELECT para ver también los datos nuevos
         df_players = pd.read_sql("""
-            SELECT name, nickname, role, favorite_game, owned_games, birth_date
-            FROM players 
+            SELECT name, nickname, role, g.name AS favorite_game, owned_games, birth_date
+            FROM players p
+            LEFT JOIN games g ON p.favgame_id = g.game_id
             WHERE active = TRUE                      
             ORDER BY created_at DESC
         """, conn)
@@ -120,9 +122,10 @@ with tab_juegos:
         if submitted_game:
             if new_game_name and new_game_maxplayers >= new_game_minplayers:
                 try:
+                    owner_id = player_map[new_owner]
                     with engine.connect() as conn:
                         query = text("""
-                            INSERT INTO games (name, logo, min_players, max_players, type, owner) 
+                            INSERT INTO games (name, logo, min_players, max_players, type, owner_id) 
                             VALUES (:n, :l, :minp, :maxp, :t, :o)
                         """)
                         conn.execute(query, {
@@ -131,7 +134,7 @@ with tab_juegos:
                             "minp": new_game_minplayers,
                             "maxp": new_game_maxplayers,
                             "t": new_type,
-                            "o": new_owner
+                            "o": owner_id
                         })
                         conn.commit()
                     st.success(f"'{new_game_name}' agregado exitosamente a la ludoteca.")
@@ -145,8 +148,9 @@ with tab_juegos:
     st.subheader("Lista de Juegos en la Ludoteca")
     with engine.connect() as conn:
         df_games = pd.read_sql("""
-            SELECT logo, name, type, min_players, max_players, owner 
-            FROM games 
+            SELECT logo, name, type, min_players, max_players, p.name AS owner 
+            FROM games g
+            LEFT JOIN players p ON g.owner_id = p.player_id
             ORDER BY name ASC
         """, conn)
         

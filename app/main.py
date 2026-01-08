@@ -18,7 +18,7 @@ st.title("⚔️ Noches de Caballeros: The Leaderboard")
 tab_carga, tab_stats, tab_historial = st.tabs(["📝 Cargar Partida", "🏆 Salón de la Fama", "📜 Historial"])
 
 # ==============================================================================
-# PESTAÑA 1: CARGA DE DATOS (Tu código anterior, encapsulado)
+# PESTAÑA 1: CARGA DE DATOS
 # ==============================================================================
 with tab_carga:
     st.header("Registrar Nueva Batalla")
@@ -42,7 +42,7 @@ with tab_carga:
             host_name = st.selectbox("Anfitrión", options=df_players['name'])
         with col2:
             game_name = st.selectbox("Juego", options=df_games['name'])
-            win_type = st.select_slider("Tipo de Victoria", options=["Normal", "Paliza", "Clutch (Sufrida)"])
+            win_type = st.select_slider("Tipo de Victoria", options=["Normal", "Clutch (Sufrida)", "Paliza"], value="Normal")
 
         st.divider()
         players_selected = st.multiselect("Jugadores", options=df_players['name'])
@@ -59,9 +59,12 @@ with tab_carga:
             try:
                 with engine.connect() as conn:
                     with conn.begin():
-                        # 1. Crear Sesión
-                        q_sess = text("INSERT INTO sessions (date, host_id) VALUES (:d, :h) RETURNING session_id")
-                        sess_id = conn.execute(q_sess, {"d": session_date, "h": player_map[host_name]}).fetchone()[0]
+                        # 1. Crear Sesión si no existe
+                        if session_date not in [s.date for s in conn.execute(text("SELECT date FROM sessions")).fetchall()]:
+                            q_sess = text("INSERT INTO sessions (date, host_id) VALUES (:d, :h) RETURNING session_id")
+                            sess_id = conn.execute(q_sess, {"d": session_date, "h": player_map[host_name]}).fetchone()[0]
+                        else:
+                            sess_id = conn.execute(text("SELECT session_id FROM sessions WHERE date = :d"), {"d": session_date}).fetchone()[0]
                         
                         # 2. Crear Match
                         q_match = text("INSERT INTO matches (session_id, game_id, winner_id, win_type) VALUES (:s, :g, :w, :wt) RETURNING match_id")
