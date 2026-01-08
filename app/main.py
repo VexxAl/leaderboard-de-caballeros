@@ -90,7 +90,7 @@ with tab_stats:
     # QUERY: Calcula todo en SQL directamente
     sql_stats = """
     SELECT 
-        p.name as "Caballero",
+        p.nickname as "Caballero",
         COUNT(mp.match_id) as "Partidas Jugadas",
         SUM(CASE WHEN mp.rank = 1 THEN 1 ELSE 0 END) as "Victorias",
         SUM(CASE WHEN mp.rank = 2 THEN 1 ELSE 0 END) as "Subcampeonatos"
