@@ -92,11 +92,11 @@ with tab_caballeros:
     with engine.connect() as conn:
         # Actualizamos el SELECT para ver también los datos nuevos
         df_players = pd.read_sql("""
-            SELECT name, nickname, role, g.name AS favorite_game, owned_games, birth_date
+            SELECT p.name, p.nickname, p.role, g.name AS favorite_game, p.owned_games, p.birth_date
             FROM players p
             LEFT JOIN games g ON p.favgame_id = g.game_id
-            WHERE active = TRUE                      
-            ORDER BY created_at DESC
+            WHERE p.active = TRUE                      
+            ORDER BY p.created_at DESC
         """, conn)
         
         st.dataframe(df_players, hide_index=True, use_container_width=True)
@@ -148,10 +148,10 @@ with tab_juegos:
     st.subheader("Lista de Juegos en la Ludoteca")
     with engine.connect() as conn:
         df_games = pd.read_sql("""
-            SELECT logo, name, type, min_players, max_players, p.name AS owner 
+            SELECT g.logo, g.name, g.type, g.min_players, g.max_players, p.name AS owner 
             FROM games g
             LEFT JOIN players p ON g.owner_id = p.player_id
-            ORDER BY name ASC
+            ORDER BY g.name ASC
         """, conn)
         
         st.dataframe(df_games, hide_index=True, use_container_width=True)
