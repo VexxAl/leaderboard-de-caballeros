@@ -26,27 +26,27 @@ with tab_carga:
     # 1. Cargar datos auxiliares
     try:
         with engine.connect() as conn:
-            df_players = pd.read_sql("SELECT player_id, name FROM players WHERE active = TRUE", conn)
+            df_players = pd.read_sql("SELECT player_id, nickname FROM players WHERE active = TRUE", conn)
             df_games = pd.read_sql("SELECT game_id, name FROM games", conn)
     except Exception as e:
         st.error(f"Error de conexión: {e}")
         st.stop()
 
-    player_map = dict(zip(df_players['name'], df_players['player_id']))
+    player_map = dict(zip(df_players['nickname'], df_players['player_id']))
     game_map = dict(zip(df_games['name'], df_games['game_id']))
 
     with st.form("entry_form"):
         col1, col2 = st.columns(2)
         with col1:
             session_date = st.date_input("Fecha", date.today())
-            host_name = st.selectbox("Anfitrión", options=df_players['name'])
+            host_name = st.selectbox("Anfitrión", options=df_players['nickame'])
         with col2:
             game_name = st.selectbox("Juego", options=df_games['name'])
             win_type = st.select_slider("Tipo de Victoria", options=["Normal", "Clutch (Sufrida)", "Paliza"], value="Normal")
 
         st.divider()
-        players_selected = st.multiselect("Jugadores", options=df_players['name'])
-        winner_name = st.selectbox("Ganador", options=players_selected if players_selected else df_players['name'])
+        players_selected = st.multiselect("Jugadores", options=df_players['nickname'])
+        winner_name = st.selectbox("Ganador", options=players_selected if players_selected else df_players['nickname'])
         
         submitted = st.form_submit_button("💾 Guardar Partida")
 
@@ -96,7 +96,7 @@ with tab_stats:
         SUM(CASE WHEN mp.rank = 2 THEN 1 ELSE 0 END) as "Subcampeonatos"
     FROM players p
     JOIN match_participants mp ON p.player_id = mp.player_id
-    GROUP BY p.name
+    GROUP BY p.nickname
     ORDER BY "Victorias" DESC, "Subcampeonatos" DESC
     """
     
@@ -144,7 +144,7 @@ with tab_historial:
     try:
         with engine.connect() as conn:
             historial = pd.read_sql("""
-                SELECT m.match_id, s.date as Fecha, g.name as Juego, p.name as Ganador, m.win_type
+                SELECT m.match_id, s.date as Fecha, g.name as Juego, p.nickname as Ganador, m.win_type
                 FROM matches m
                 JOIN games g ON m.game_id = g.game_id
                 JOIN players p ON m.winner_id = p.player_id

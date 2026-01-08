@@ -72,13 +72,13 @@ else:
     # Cargar datos auxiliares
     try:
         with engine.connect() as conn:
-            df_players = pd.read_sql("SELECT player_id, name FROM players WHERE active = TRUE", conn)
+            df_players = pd.read_sql("SELECT player_id, nickname FROM players WHERE active = TRUE", conn)
             df_games = pd.read_sql("SELECT game_id, name FROM games", conn)
     except Exception as e:
         st.error(f"Error de conexión: {e}")
         st.stop()
 
-    player_map = dict(zip(df_players['name'], df_players['player_id']))
+    player_map = dict(zip(df_players['nickname'], df_players['player_id']))
     game_map = dict(zip(df_games['name'], df_games['game_id']))
 
     # PESTAÑA 1: GESTIÓN DE CABALLEROS
@@ -124,12 +124,11 @@ else:
                             })
                             conn.commit()
                         st.success(f"Bienvenido mi estimado {new_nick}, es todo un honor.")
-                        time.sleep(1) # Esperamos un segundo para que se vea el mensaje
-                        st.rerun()    # Recargamos para actualizar la tabla de abajo
+                        time.sleep(1.5)
+                        st.rerun()
+
                     except Exception as e:
                         st.error(f"Error al crear jugador: {e}")
-                elif df_games.empty:
-                    st.warning("⚠️ Primero debes cargar juegos en la pestaña 'Carga de Juegos'.")
                 else:
                     st.warning("Por favor, el Nombre y el Nickname son obligatorios.")
 
@@ -140,7 +139,7 @@ else:
         with engine.connect() as conn:
             # Actualizamos el SELECT para ver también los datos nuevos
             df_players_view = pd.read_sql("""
-                SELECT p.name, p.nickname, p.role, g.name AS favorite_game, p.owned_games, p.birth_date
+                SELECT p.nickname AS nombre, p.role, g.name AS favorite_game, p.owned_games, p.birth_date
                 FROM players p
                 LEFT JOIN games g ON p.favgame_id = g.game_id
                 WHERE p.active = TRUE                      
@@ -164,7 +163,7 @@ else:
 
             new_type = col1.selectbox("Tipo de Juego", ["Principal", "Casual", "Party Game", "co-op", "Cartas", "CATAN"])
             
-            opciones_owners = df_players['name'].tolist() if not df_players.empty else ["Sin jugadores"]
+            opciones_owners = df_players['nickname'].tolist() if not df_players.empty else ["Sin jugadores"]
             new_owner = col2.selectbox("Dueño del Juego", options=opciones_owners)
 
             submitted_game = st.form_submit_button("Agregar Juego a la Ludoteca 📚")
@@ -202,7 +201,7 @@ else:
         st.subheader("Lista de Juegos en la Ludoteca")
         with engine.connect() as conn:
             df_games_view = pd.read_sql("""
-                SELECT g.logo, g.name, g.type, g.min_players, g.max_players, p.name AS owner 
+                SELECT g.logo, g.name, g.type, g.min_players, g.max_players, p.nickname AS owner 
                 FROM games g
                 LEFT JOIN players p ON g.owner_id = p.player_id
                 ORDER BY g.name ASC
