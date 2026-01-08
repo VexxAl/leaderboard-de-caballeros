@@ -93,13 +93,13 @@ with tab_juegos:
     with st.form("new_game_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
         
+        new_logo = col1.text_input("Emoji que lo Representa")
         new_game_name = col1.text_input("Nombre del Juego")
-        new_type = col2.selectbox("Tipo de Juego", ["Principal", "Casual", "Party Game", "co-op", "Cartas", "CATAN"])
         
         new_game_minplayers = col1.number_input("Mínimo de Jugadores", min_value=1, step=1)
         new_game_maxplayers = col2.number_input("Máximo de Jugadores", min_value=1, step=1)
         
-        new_game_duration = col1.number_input("Duración Estimada (minutos)", min_value=1, step=5)
+        new_type = col1.selectbox("Tipo de Juego", ["Principal", "Casual", "Party Game", "co-op", "Cartas", "CATAN"])
         new_owner = col2.selectbox("Dueño del Juego", options=["Caballero Admin", "Otro Caballero"])
 
         submitted_game = st.form_submit_button("Agregar Juego a la Ludoteca 📚")
@@ -109,17 +109,19 @@ with tab_juegos:
                 try:
                     with engine.connect() as conn:
                         query = text("""
-                            INSERT INTO games (name, min_players, max_players, duration_minutes) 
-                            VALUES (:n, :minp, :maxp, :dur)
+                            INSERT INTO games (name, logo, min_players, max_players, type, owner) 
+                            VALUES (:n, :l, :minp, :maxp, :t, :o)
                         """)
                         conn.execute(query, {
                             "n": new_game_name,
+                            "l": new_logo,
                             "minp": new_game_minplayers,
                             "maxp": new_game_maxplayers,
-                            "dur": new_game_duration
+                            "t": new_type,
+                            "o": new_owner
                         })
                         conn.commit()
-                    st.success(f"Juego '{new_game_name}' agregado exitosamente a la biblioteca.")
+                    st.success(f"'{new_game_name}' agregado exitosamente a la ludoteca.")
                 except Exception as e:
                     st.error(f"Error al agregar juego: {e}")
             else:
@@ -130,7 +132,7 @@ with tab_juegos:
     st.subheader("Lista de Juegos en la Ludoteca")
     with engine.connect() as conn:
         df_games = pd.read_sql("""
-            SELECT name, min_players, max_players, duration_minutes 
+            SELECT name, logo, min_players, max_players, type, owner 
             FROM games 
             ORDER BY name ASC
         """, conn)
