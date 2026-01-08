@@ -39,7 +39,7 @@ with tab_carga:
         col1, col2 = st.columns(2)
         with col1:
             session_date = st.date_input("Fecha", date.today())
-            host_name = st.selectbox("Anfitrión", options=df_players['nickame'])
+            host_name = st.selectbox("Anfitrión", options=df_players['nickname'])
         with col2:
             game_name = st.selectbox("Juego", options=df_games['name'])
             win_type = st.select_slider("Tipo de Victoria", options=["Normal", "Clutch (Sufrida)", "Paliza"], value="Normal")
