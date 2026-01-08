@@ -79,7 +79,6 @@ def render_dungeon():
                 st.write("""
                 Llevan horas recorriendo los pasillos húmedos de la mazmorra. El aire aquí es denso, cargado de un olor a moho antiguo y madera podrida. Frente a ustedes, el camino termina en una impo>                Del otro lado, no hay silencio. Se escucha una respiración pesada y el tic-tic-tic rítmico de algo golpeando madera.
                 """)
-                st.image("media/dungeon_door.png", width=420)
                 st.write("Deciden entrar. El picaporte, frío al tacto, gira con un chirrido oxidado...")
 
             if st.button("Patear la puerta! 🚪"):
@@ -87,6 +86,8 @@ def render_dungeon():
                     time.sleep(2.0)
                 st.session_state.dungeon_stage = 'reveal'
                 st.rerun()
+                
+                st.image("media/dungeon_door.png", width=420)
 
         # --- ETAPA 2: LA REVELACIÓN ---
         elif st.session_state.dungeon_stage == 'reveal':
@@ -96,17 +97,17 @@ def render_dungeon():
                 Y ahí está él. Un Orco sentado y encorvado sobre el tablero. El lugar huele a cerveza rancia y parece estar más estresado por su próximo comercio que por el lugar.
                 Una mazmorra repleta de jarras de peltre rebosantes que chorrean espuma directamente sobre la mesa, creando charcos pegajosos que avanzan peligrosamente hacia las cartas y fichas. No h>                Al notar la luz, el Orco levanta la vista con confusión, sosteniendo una carta de recurso arrugada y una cara de confusión absoluta.
                 """)
-                st.image("media/dungeon_orc.png", width=420)
 
              if st.button("¡Desafiar al Orco! ⚔️"):
                 st.session_state.dungeon_stage = 'combat'
                 st.rerun()
+                
+                st.image("media/dungeon_orc.png", width=420)
 
     # --- ETAPA 3: EL COMBATE ---
         elif st.session_state.dungeon_stage == 'combat':
             with st.container():
                 st.error("¡El Orco Ludópata ruge protegiendo sus ovejas!")
-                st.image("media/dungeon_battle.png", width=420)
 
                 # Barra de vida
                 hp_percent = st.session_state.monster_hp / st.session_state.monster_max_hp
@@ -153,14 +154,16 @@ def render_dungeon():
                 if st.session_state.combat_log:
                     st.markdown('<div class="combat-log"><strong>📜 Historial de Batalla:</strong><br>' + "<br>".join(st.session_state.combat_log[:5]) + '</div>', unsafe_allow_html=True)
         
+                st.image("media/dungeon_battle.png", width=420)
+        
         # --- ETAPA 4: LOOT Y ACERTIJO ---
         elif st.session_state.dungeon_stage == 'loot':
             with st.container():
                 st.success("El Orco se va 'pipipipipi' y murmurando 'Bha! todo culpa de la charola...'")
                 st.image("media/dungeon_loot.png", width=420)
 
-                st.markdown("### 📜 El Pergamino del Guardián")
-                st.caption("Responde el acertijo para demostrar que eres digno:")
+                st.markdown("### 📜 El Cofre del Guardián")
+                st.caption("Responde el acertijo para demostrar que eres digno de obtener este secreto:")
 
                 riddle = st.text_input("Imperio hexagonal y perfecto, almaceno recursos valiosos como un campeón. Si intentas saquear mis recursos, vas a gritar y correr. ¿Qué soy?.")
 

@@ -12,7 +12,7 @@ st.set_page_config(page_title="Noches de Caballeros", page_icon="⚔️", layout
 engine = get_engine()
 
 # --- TÍTULO ---
-st.title("⚔️ Noches de Caballeros: The Leaderboard")
+st.title("⚔️ Juegos de Caballeros: The Leaderboard")
 
 # CREAMOS LAS PESTAÑAS
 tab_carga, tab_stats, tab_historial = st.tabs(["📝 Cargar Partida", "🏆 Salón de la Fama", "📜 Historial"])
@@ -21,7 +21,7 @@ tab_carga, tab_stats, tab_historial = st.tabs(["📝 Cargar Partida", "🏆 Sal�
 # PESTAÑA 1: CARGA DE DATOS
 # ==============================================================================
 with tab_carga:
-    st.header("Registrar Nueva Batalla")
+    st.header("Registrar Nueva Batalla 🗡️🏹")
     
     # 1. Cargar datos auxiliares
     try:
@@ -85,7 +85,7 @@ with tab_carga:
 # PESTAÑA 2: ESTADÍSTICAS
 # ==============================================================================
 with tab_stats:
-    st.header("📊 Estadísticas Generales")
+    st.header("Estadísticas Generales 📊")
     
     # QUERY: Calcula todo en SQL directamente
     sql_stats = """
@@ -140,7 +140,7 @@ with tab_stats:
 # PESTAÑA 3: HISTORIAL
 # ==============================================================================
 with tab_historial:
-    st.header("📜 Historial de Batallas")
+    st.header("Historial de Batallas 📜")
     try:
         with engine.connect() as conn:
             historial = pd.read_sql("""
