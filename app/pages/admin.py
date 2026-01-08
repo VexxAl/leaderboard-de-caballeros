@@ -25,11 +25,24 @@ tab_caballeros, tab_juegos = st.tabs(["🎩 Gestión de Caballeros", "🃏 Carga
 
 # --- 2. GESTIÓN ---
 
+# Cargar datos auxiliares
+try:
+    with engine.connect() as conn:
+        df_players = pd.read_sql("SELECT player_id, name FROM players WHERE active = TRUE", conn)
+        df_games = pd.read_sql("SELECT game_id, name FROM games", conn)
+except Exception as e:
+    st.error(f"Error de conexión: {e}")
+    st.stop()
+
+player_map = dict(zip(df_players['name'], df_players['player_id']))
+game_map = dict(zip(df_games['name'], df_games['game_id']))
+
 # PESTAÑA 1: GESTIÓN DE CABALLEROS
 with tab_caballeros:
     st.header("🎩 Gestión de Caballeros")
 
     with st.form("new_player_form", clear_on_submit=True):
+
         # Datos del nuevo jugador
         col1, col2 = st.columns(2)
         
@@ -37,7 +50,7 @@ with tab_caballeros:
         new_nick = col2.text_input("Nickname")
         
         new_birth = col1.date_input("Fecha de Nacimiento")
-        new_favgame = col2.selectbox("Juego Favorito", ["Catan", "Splendor", "Survive the Island", "Jugar con tu señora"])
+        new_favgame = col2.selectbox("Juego Favorito", options=df_games['name'])
         
         new_ownedgames = col1.number_input("Número de Juegos Propios", min_value=0, step=1)
         new_role = col2.text_input("Rol en la Mesa (ej: Jugador, Bartender, Cocinero)")
@@ -100,7 +113,7 @@ with tab_juegos:
         new_game_maxplayers = col2.number_input("Máximo de Jugadores", min_value=1, step=1)
         
         new_type = col1.selectbox("Tipo de Juego", ["Principal", "Casual", "Party Game", "co-op", "Cartas", "CATAN"])
-        new_owner = col2.text_input("Dueño del Juego")
+        new_owner = col2.selectbox("Dueño del Juego", options=df_players['name'])
 
         submitted_game = st.form_submit_button("Agregar Juego a la Ludoteca 📚")
 
