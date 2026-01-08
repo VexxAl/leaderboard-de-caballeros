@@ -36,7 +36,7 @@ with tab_caballeros:
         new_name = col1.text_input("Nombre")
         new_nick = col2.text_input("Nickname")
         
-        new_borne = col1.date_input("Fecha de Nacimiento")
+        new_birth = col1.date_input("Fecha de Nacimiento")
         new_favgame = col2.selectbox("Juego Favorito", ["Catan", "Splendor", "Survive the Island", "Jugar con tu señora"])
         
         new_ownedgames = col1.number_input("Número de Juegos Propios", min_value=0, step=1)
@@ -58,7 +58,7 @@ with tab_caballeros:
                         conn.execute(query, {
                             "n": new_name, 
                             "nick": new_nick,
-                            "b": new_borne,
+                            "b": new_birth,
                             "f": new_favgame,
                             "o": new_ownedgames,
                             "r": new_role
@@ -78,9 +78,9 @@ with tab_caballeros:
     with engine.connect() as conn:
         # Actualizamos el SELECT para ver también los datos nuevos
         df_players = pd.read_sql("""
-            SELECT name, nickname, role, favorite_game, owned_games, birth_date 
+            SELECT name, nickname, role, favorite_game, owned_games, birth_date
             FROM players 
-            WHERE active = TRUE 
+            WHERE active = TRUE                      
             ORDER BY created_at DESC
         """, conn)
         
@@ -132,7 +132,7 @@ with tab_juegos:
     st.subheader("Lista de Juegos en la Ludoteca")
     with engine.connect() as conn:
         df_games = pd.read_sql("""
-            SELECT name, logo, min_players, max_players, type, owner 
+            SELECT logo, name, type, min_players, max_players, owner 
             FROM games 
             ORDER BY name ASC
         """, conn)
