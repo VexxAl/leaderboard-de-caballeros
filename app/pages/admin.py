@@ -42,7 +42,7 @@ with tab_caballeros:
         new_ownedgames = col1.number_input("Número de Juegos Propios", min_value=0, step=1)
         new_role = col2.text_input("Rol en la Mesa (ej: Jugador, Bartender, Cocinero)")
 
-        submitted = st.form_submit_button("Ingresar Caballero a la Taberna 🎲")
+        submitted = st.form_submit_button("Ingresar Caballero a la Mesa 🎲")
         
         if submitted:
             # Validamos que al menos tenga nombre y nick
@@ -94,13 +94,13 @@ with tab_juegos:
         col1, col2 = st.columns(2)
         
         new_logo = col1.text_input("Emoji que lo Representa")
-        new_game_name = col1.text_input("Nombre del Juego")
+        new_game_name = col2.text_input("Nombre del Juego")
         
         new_game_minplayers = col1.number_input("Mínimo de Jugadores", min_value=1, step=1)
         new_game_maxplayers = col2.number_input("Máximo de Jugadores", min_value=1, step=1)
         
         new_type = col1.selectbox("Tipo de Juego", ["Principal", "Casual", "Party Game", "co-op", "Cartas", "CATAN"])
-        new_owner = col2.selectbox("Dueño del Juego", options=["Caballero Admin", "Otro Caballero"])
+        new_owner = col2.text_input("Dueño del Juego")
 
         submitted_game = st.form_submit_button("Agregar Juego a la Ludoteca 📚")
 
