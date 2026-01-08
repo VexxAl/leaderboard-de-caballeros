@@ -1,8 +1,12 @@
 import streamlit as st
 import pandas as pd
 from sqlalchemy import text
+import os
+from dotenv import load_dotenv
 
 from app.database import get_engine
+
+load_dotenv()  
 
 st.set_page_config(page_title="Admin Panel", page_icon="🛠️")
 st.title("🛠️ Panel de Administración")
@@ -10,43 +14,125 @@ st.title("🛠️ Panel de Administración")
 # --- 1. SEGURIDAD ---
 secret_pass = st.sidebar.text_input("Contraseña de Admin", type="password")
 
-if secret_pass != "simplemente, juego de caballeros":
+if secret_pass != os.getenv("ADMIN_PASSWORD"):
     st.info("Introduce la contraseña para acceder a las herramientas de gestión.")
     st.stop() # Detiene la ejecución aquí si no hay clave
 
 engine = get_engine()
 
-# --- 2. GESTIÓN DE JUGADORES ---
-st.header("🎩 Gestión de Caballeros")
+# CREAMOS LAS PESTAÑAS
+tab_caballeros, tab_juegos = st.tabs(["🎩 Gestión de Caballeros", "🃏 Carga de Juegos"])
 
-with st.form("new_player_form", clear_on_submit=True):
-    # Datos del nuevo jugador
-    col1, col2 = st.columns(2)
-    new_name = col1.text_input("Nombre")
-    new_nick = col2.text_input("Nickname")
-    new_borne = col1.date_input("Fecha de Nacimiento")
-    new_favgame = col2.selectbox("Juego Favorito", ["Catan", "Splendor", "Survive the Island", "Jugar con tu señora"])
-    new_ownedgames = col1.number_input("Número de Juegos Propios", min_value=0, step=1)
-    new_role = col2.text_input("Rol en la Mesa (ej: Jugador, Espectador, Bartender, Cocinero, etc.)")
+# --- 2. GESTIÓN ---
 
-    submitted = st.form_submit_button("Ingresar Caballero a la Mesa 🎲")
-    
-    if submitted:
-        if new_name and new_nick:
-            try:
-                with engine.connect() as conn:
-                    # Usamos parámetros (:name) para evitar inyección SQL (seguridad básica)
-                    query = text("INSERT INTO players (name, nickname, active, created_at) VALUES (:n, :nick, TRUE, NOW())")
-                    conn.execute(query, {"n": new_name, "nick": new_nick})
-                    conn.commit()
-                st.success(f"Bienvenido mi estimado {new_nick}, es todo un honor.")
-            except Exception as e:
-                st.error(f"Error al crear jugador: {e}")
-        else:
-            st.warning("Por favor completa todos los campos.")
+# PESTAÑA 1: GESTIÓN DE CABALLEROS
+with tab_caballeros:
+    st.header("🎩 Gestión de Caballeros")
 
-# --- 3. VER JUGADORES ACTUALES ---
-st.subheader("Lista de Jugadores Activos")
-with engine.connect() as conn:
-    df_players = pd.read_sql("SELECT player_id, name, nickname, created_at FROM players WHERE active = TRUE ORDER BY created_at DESC", conn)
-    st.dataframe(df_players, hide_index=True)
+    with st.form("new_player_form", clear_on_submit=True):
+        # Datos del nuevo jugador
+        col1, col2 = st.columns(2)
+        
+        new_name = col1.text_input("Nombre")
+        new_nick = col2.text_input("Nickname")
+        
+        new_borne = col1.date_input("Fecha de Nacimiento")
+        new_favgame = col2.selectbox("Juego Favorito", ["Catan", "Splendor", "Survive the Island", "Jugar con tu señora"])
+        
+        new_ownedgames = col1.number_input("Número de Juegos Propios", min_value=0, step=1)
+        new_role = col2.text_input("Rol en la Mesa (ej: Jugador, Bartender, Cocinero)")
+
+        submitted = st.form_submit_button("Ingresar Caballero a la Taberna 🎲")
+        
+        if submitted:
+            # Validamos que al menos tenga nombre y nick
+            if new_name and new_nick:
+                try:
+                    with engine.connect() as conn:
+                        query = text("""
+                            INSERT INTO players (name, nickname, birth_date, favorite_game, owned_games, role, active, created_at) 
+                            VALUES (:n, :nick, :b, :f, :o, :r, TRUE, NOW())
+                        """)
+                        
+                        # Pasamos los valores del formulario al diccionario de parámetros
+                        conn.execute(query, {
+                            "n": new_name, 
+                            "nick": new_nick,
+                            "b": new_borne,
+                            "f": new_favgame,
+                            "o": new_ownedgames,
+                            "r": new_role
+                        })
+                        conn.commit()
+                    st.success(f"Bienvenido mi estimado {new_nick}, es todo un honor.")
+                    st.balloons() # ¡Un poco de fiesta!
+                except Exception as e:
+                    st.error(f"Error al crear jugador: {e}")
+            else:
+                st.warning("Por favor, el Nombre y el Nickname son obligatorios.")
+
+    # --- VER JUGADORES ACTUALES ---
+    st.divider()
+    st.subheader("Lista de Jugadores Activos")
+
+    with engine.connect() as conn:
+        # Actualizamos el SELECT para ver también los datos nuevos
+        df_players = pd.read_sql("""
+            SELECT name, nickname, role, favorite_game, owned_games, birth_date 
+            FROM players 
+            WHERE active = TRUE 
+            ORDER BY created_at DESC
+        """, conn)
+        
+        st.dataframe(df_players, hide_index=True, use_container_width=True)
+
+# PESTAÑA 2: CARGA DE JUEGOS
+with tab_juegos:
+    st.header("🃏 Carga de Nuevos Juegos")
+
+    with st.form("new_game_form", clear_on_submit=True):
+        col1, col2 = st.columns(2)
+        
+        new_game_name = col1.text_input("Nombre del Juego")
+        new_type = col2.selectbox("Tipo de Juego", ["Principal", "Casual", "Party Game", "co-op", "Cartas", "CATAN"])
+        
+        new_game_minplayers = col1.number_input("Mínimo de Jugadores", min_value=1, step=1)
+        new_game_maxplayers = col2.number_input("Máximo de Jugadores", min_value=1, step=1)
+        
+        new_game_duration = col1.number_input("Duración Estimada (minutos)", min_value=1, step=5)
+        new_owner = col2.selectbox("Dueño del Juego", options=["Caballero Admin", "Otro Caballero"])
+
+        submitted_game = st.form_submit_button("Agregar Juego a la Ludoteca 📚")
+
+        if submitted_game:
+            if new_game_name and new_game_maxplayers >= new_game_minplayers:
+                try:
+                    with engine.connect() as conn:
+                        query = text("""
+                            INSERT INTO games (name, min_players, max_players, duration_minutes) 
+                            VALUES (:n, :minp, :maxp, :dur)
+                        """)
+                        conn.execute(query, {
+                            "n": new_game_name,
+                            "minp": new_game_minplayers,
+                            "maxp": new_game_maxplayers,
+                            "dur": new_game_duration
+                        })
+                        conn.commit()
+                    st.success(f"Juego '{new_game_name}' agregado exitosamente a la biblioteca.")
+                except Exception as e:
+                    st.error(f"Error al agregar juego: {e}")
+            else:
+                st.warning("Por favor, asegúrate de que el nombre del juego esté completo y que el máximo de jugadores sea mayor o igual al mínimo.")
+
+    # --- VER JUEGOS ACTUALES ---
+    st.divider()
+    st.subheader("Lista de Juegos en la Ludoteca")
+    with engine.connect() as conn:
+        df_games = pd.read_sql("""
+            SELECT name, min_players, max_players, duration_minutes 
+            FROM games 
+            ORDER BY name ASC
+        """, conn)
+        
+        st.dataframe(df_games, hide_index=True, use_container_width=True)

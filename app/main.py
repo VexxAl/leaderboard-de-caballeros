@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import text
 from datetime import date
-# Importamos el engine desde el módulo compartido
+
 from app.database import get_engine 
 
 # --- CONFIGURACIÓN ---
