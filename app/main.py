@@ -1,35 +1,18 @@
 import streamlit as st
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 from datetime import date
-import os
-from dotenv import load_dotenv
-
-# Cargar variables de entorno
-load_dotenv()
+# Importamos el engine desde el módulo compartido
+from app.database import get_engine 
 
 # --- CONFIGURACIÓN ---
-st.set_page_config(page_title="Noche de Caballeros", page_icon="⚔️", layout="wide")
+st.set_page_config(page_title="Noches de Caballeros", page_icon="⚔️", layout="wide")
 
-# CONEXIÓN DINÁMICA
-# Los segundos valores son los "defaults" por si no hay .env
-db_user = os.getenv("DB_USER", "admin")
-db_pass = os.getenv("DB_PASSWORD", "password123")
-db_host = os.getenv("DB_HOST", "localhost")  # En Docker esto será "db"
-db_port = os.getenv("DB_PORT", "5433")       # En Docker esto será "5432"
-db_name = os.getenv("DB_NAME", "leaderboard_db")
-
-# URL con las variables
-DB_URL = f"postgresql+pg8000://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-
-@st.cache_resource
-def get_engine():
-    return create_engine(DB_URL)
-
+# Obtenemos la conexión
 engine = get_engine()
 
 # --- TÍTULO ---
-st.title("⚔️ Noche de Caballeros: The Leaderboard")
+st.title("⚔️ Noches de Caballeros: The Leaderboard")
 
 # CREAMOS LAS PESTAÑAS
 tab_carga, tab_stats, tab_historial = st.tabs(["📝 Cargar Partida", "🏆 Salón de la Fama", "📜 Historial"])
