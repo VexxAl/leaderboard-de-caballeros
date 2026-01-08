@@ -12,7 +12,7 @@ st.set_page_config(page_title="Admin Panel", page_icon="🛠️")
 st.title("🛠️ Panel de Administración")
 
 # --- 1. SEGURIDAD ---
-secret_pass = st.sidebar.text_input("Contraseña de Admin", type="password")
+secret_pass = st.text_input("Contraseña de Admin", type="password")
 
 if secret_pass != os.getenv("ADMIN_PASSWORD"):
     st.info("Introduce la contraseña para acceder a las herramientas de gestión.")
