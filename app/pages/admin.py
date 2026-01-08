@@ -35,7 +35,7 @@ else:
 
     st.title("🛠️ Panel de Administración")
     
-    real_admin_pass = os.getenv("ADMIN_PASSWORD", "1234")
+    real_admin_pass = os.getenv("ADMIN_PASSWORD")
     
     st.success(f"🎉 ¡Has superado la prueba! La contraseña maestra es: **{real_admin_pass}**")
 
@@ -77,7 +77,7 @@ else:
             new_name = col1.text_input("Nombre")
             new_nick = col2.text_input("Nickname")
 
-            new_birth = col1.date_input("Fecha de Nacimiento")
+            new_birth = col1.date_input("Fecha de Nacimiento", min_value=pd.to_datetime("1970-01-01"), format="DD-MM-YYYY")
             new_favgame = col2.selectbox("Juego Favorito", options=df_games['name'])
 
             new_ownedgames = col1.number_input("Número de Juegos Propios", min_value=0, step=1)
