@@ -77,9 +77,12 @@ def render_dungeon():
         if st.session_state.dungeon_stage == 'door':
             with st.container():
                 st.write("""
-                Llevan horas recorriendo los pasillos húmedos de la mazmorra. El aire aquí es denso, cargado de un olor a moho antiguo y madera podrida. Frente a ustedes, el camino termina en una impo>                Del otro lado, no hay silencio. Se escucha una respiración pesada y el tic-tic-tic rítmico de algo golpeando madera.
+                Llevan horas recorriendo los pasillos húmedos de la mazmorra. El aire aquí es denso, cargado de un olor a moho antiguo y madera podrida. Frente a ustedes, el camino termina en una imponente puerta de roble reforzado, remachada con bandas de hierro negro que parecen haber resistido asedios enteros.                
+                Del otro lado, no hay silencio. Se escucha una respiración pesada y el tic-tic-tic rítmico de algo golpeando madera.
                 """)
                 st.write("Deciden entrar. El picaporte, frío al tacto, gira con un chirrido oxidado...")
+                
+                st.image("media/dungeon_door.png", width=420)
 
             if st.button("Patear la puerta! 🚪"):
                 with st.spinner("Tomando carrera..."):
@@ -87,7 +90,6 @@ def render_dungeon():
                 st.session_state.dungeon_stage = 'reveal'
                 st.rerun()
                 
-                st.image("media/dungeon_door.png", width=420)
 
         # --- ETAPA 2: LA REVELACIÓN ---
         elif st.session_state.dungeon_stage == 'reveal':
@@ -95,20 +97,24 @@ def render_dungeon():
                 st.write("""
                 La luz de las antorchas revela un caos: monedas de oro y joyas apartadas para hacer sitio a un tablero hexagonal.
                 Y ahí está él. Un Orco sentado y encorvado sobre el tablero. El lugar huele a cerveza rancia y parece estar más estresado por su próximo comercio que por el lugar.
-                Una mazmorra repleta de jarras de peltre rebosantes que chorrean espuma directamente sobre la mesa, creando charcos pegajosos que avanzan peligrosamente hacia las cartas y fichas. No h>                Al notar la luz, el Orco levanta la vista con confusión, sosteniendo una carta de recurso arrugada y una cara de confusión absoluta.
+                Una mazmorra repleta de jarras de peltre rebosantes que chorrean espuma directamente sobre la mesa, creando charcos pegajosos que avanzan peligrosamente hacia las cartas y fichas. No hay ni un solo posavasos a la vista. La humedad del ambiente y la bebida están combando los bordes del tablero.           
+                Al notar la luz, el Orco levanta la vista con confusión, sosteniendo una carta de recurso arrugada y una cara de confusión absoluta.
                 """)
+                
+                st.image("media/dungeon_orc.png", width=420)
 
              if st.button("¡Desafiar al Orco! ⚔️"):
                 st.session_state.dungeon_stage = 'combat'
                 st.rerun()
                 
-                st.image("media/dungeon_orc.png", width=420)
 
     # --- ETAPA 3: EL COMBATE ---
         elif st.session_state.dungeon_stage == 'combat':
             with st.container():
                 st.error("¡El Orco Ludópata ruge protegiendo sus ovejas!")
 
+                st.image("media/dungeon_battle.png", width=420)
+                
                 # Barra de vida
                 hp_percent = st.session_state.monster_hp / st.session_state.monster_max_hp
                 st.progress(hp_percent, text=f"Voluntad del Orco: {st.session_state.monster_hp}/{st.session_state.monster_max_hp}")
@@ -154,12 +160,11 @@ def render_dungeon():
                 if st.session_state.combat_log:
                     st.markdown('<div class="combat-log"><strong>📜 Historial de Batalla:</strong><br>' + "<br>".join(st.session_state.combat_log[:5]) + '</div>', unsafe_allow_html=True)
         
-                st.image("media/dungeon_battle.png", width=420)
-        
         # --- ETAPA 4: LOOT Y ACERTIJO ---
         elif st.session_state.dungeon_stage == 'loot':
             with st.container():
                 st.success("El Orco se va 'pipipipipi' y murmurando 'Bha! todo culpa de la charola...'")
+                
                 st.image("media/dungeon_loot.png", width=420)
 
                 st.markdown("### 📜 El Cofre del Guardián")
