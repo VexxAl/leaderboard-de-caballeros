@@ -36,21 +36,15 @@ def render_dungeon():
     # 1. CSS Específico para la Mazmorra (Centrado y Estilo Dark)
     st.markdown("""
         <style>
-        .centered-dungeon {
-            text-align: center;
-            padding: 20px;
-            background-color: #1E1E1E;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            border: 2px solid #444;
-        }
-        .centered-dungeon img {
+        img {
             margin-top: 20px;
             margin-bottom: 20px;
+            margin-left: 40px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.5);
         }
         .stButton button {
+            aling: center;
             margin: 0 auto;
             display: block;
         }
@@ -74,57 +68,51 @@ def render_dungeon():
     init_dungeon_state()
 
     # 3. Estructura de Columnas (Centrado visual)
-    col_spacer1, col_main, col_spacer2 = st.columns([1, 2, 1])
+    col_spacer1, col_main, col_spacer2 = st.columns([1, 10, 1])
     
     with col_main:
         st.title("🏰 La Prueba del Guardián")
-        
+    
         # --- ETAPA 1: LA PUERTA ---
         if st.session_state.dungeon_stage == 'door':
             with st.container():
-                st.markdown('<div class="centered-dungeon">', unsafe_allow_html=True)
                 st.write("""
-                Llevan horas recorriendo los pasillos húmedos de la mazmorra. El aire aquí es denso, cargado de un olor a moho antiguo y madera podrida. Frente a ustedes, el camino termina en una imponente puerta de roble reforzado.
-                Del otro lado, no hay silencio. Se escucha una respiración pesada y el tic-tic-tic rítmico de algo golpeando madera.
+                Llevan horas recorriendo los pasillos húmedos de la mazmorra. El aire aquí es denso, cargado de un olor a moho antiguo y madera podrida. Frente a ustedes, el camino termina en una impo>                Del otro lado, no hay silencio. Se escucha una respiración pesada y el tic-tic-tic rítmico de algo golpeando madera.
                 """)
-                st.image("media/dungeon_door.png", width=120)
+                st.image("media/dungeon_door.png", width=420)
                 st.write("Deciden entrar. El picaporte, frío al tacto, gira con un chirrido oxidado...")
-                st.markdown('</div>', unsafe_allow_html=True)
 
-            if st.button("Empujar la puerta 🚪"):
-                with st.spinner("Abriendo..."):
-                    time.sleep(2.5)
+            if st.button("Patear la puerta! 🚪"):
+                with st.spinner("Tomando carrera..."):
+                    time.sleep(2.0)
                 st.session_state.dungeon_stage = 'reveal'
                 st.rerun()
 
         # --- ETAPA 2: LA REVELACIÓN ---
         elif st.session_state.dungeon_stage == 'reveal':
              with st.container():
-                st.markdown('<div class="centered-dungeon">', unsafe_allow_html=True)
                 st.write("""
                 La luz de las antorchas revela un caos: monedas de oro y joyas apartadas para hacer sitio a un tablero hexagonal.
-                Y ahí está él. Un Orco masivo, cicatrizado, sentado y encorvado sobre el tablero. El lugar huele a cerveza rancia.
-                Al notar la luz, el Orco levanta la vista con confusión, sosteniendo una carta de recurso arrugada. Parece estresado por su próximo movimiento.
+                Y ahí está él. Un Orco sentado y encorvado sobre el tablero. El lugar huele a cerveza rancia y parece estar más estresado por su próximo comercio que por el lugar.
+                Una mazmorra repleta de jarras de peltre rebosantes que chorrean espuma directamente sobre la mesa, creando charcos pegajosos que avanzan peligrosamente hacia las cartas y fichas. No h>                Al notar la luz, el Orco levanta la vista con confusión, sosteniendo una carta de recurso arrugada y una cara de confusión absoluta.
                 """)
-                st.image("media/dungeon_orc.png", width=120)
-                st.markdown('</div>', unsafe_allow_html=True)
+                st.image("media/dungeon_orc.png", width=420)
 
              if st.button("¡Desafiar al Orco! ⚔️"):
                 st.session_state.dungeon_stage = 'combat'
                 st.rerun()
 
-        # --- ETAPA 3: EL COMBATE ---
+    # --- ETAPA 3: EL COMBATE ---
         elif st.session_state.dungeon_stage == 'combat':
             with st.container():
-                st.markdown('<div class="centered-dungeon">', unsafe_allow_html=True)
                 st.error("¡El Orco Ludópata ruge protegiendo sus ovejas!")
-                st.image("https://img.icons8.com/color/96/fantasy.png", width=100)
-                
+                st.image("media/dungeon_battle.png", width=420)
+
                 # Barra de vida
                 hp_percent = st.session_state.monster_hp / st.session_state.monster_max_hp
                 st.progress(hp_percent, text=f"Voluntad del Orco: {st.session_state.monster_hp}/{st.session_state.monster_max_hp}")
                 st.markdown("---")
-                
+
                 if st.button("🎲 Tirar D20 de Ataque"):
                     # Lógica del destino (Pifia forzada)
                     force_fumble = (st.session_state.monster_hp < (st.session_state.monster_max_hp * 0.3)) and (not st.session_state.has_fumbled_yet)
@@ -139,9 +127,9 @@ def render_dungeon():
                     crit = damage == 20
                     fail = damage == 1
                     final_damage = damage * 2 if crit else (0 if fail else damage)
-                    
+
                     st.session_state.monster_hp -= final_damage
-                    
+
                     # Feedback
                     log_entry = ""
                     if crit:
@@ -154,30 +142,28 @@ def render_dungeon():
                     else:
                         st.toast(f"¡Zas! ⚔️ {final_damage} de daño.", icon="🗡️")
                         log_entry = f"⚔️ Ataque (D20: {damage}) -> {final_damage} Daño."
-                    
+
                     st.session_state.combat_log.insert(0, log_entry)
 
                     if st.session_state.monster_hp <= 0:
                         st.session_state.dungeon_stage = 'loot'
                         st.balloons()
                         st.rerun()
-                
+
                 if st.session_state.combat_log:
                     st.markdown('<div class="combat-log"><strong>📜 Historial de Batalla:</strong><br>' + "<br>".join(st.session_state.combat_log[:5]) + '</div>', unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-
+        
         # --- ETAPA 4: LOOT Y ACERTIJO ---
         elif st.session_state.dungeon_stage == 'loot':
             with st.container():
-                st.markdown('<div class="centered-dungeon">', unsafe_allow_html=True)
-                st.success("El Orco colapsa murmurando '...todo culpa de la charola ...'.")
-                st.image("https://img.icons8.com/fluency/96/treasure-chest.png", width=120)
-                
+                st.success("El Orco se va 'pipipipipi' y murmurando 'Bha! todo culpa de la charola...'")
+                st.image("media/dungeon_loot.png", width=420)
+
                 st.markdown("### 📜 El Pergamino del Guardián")
                 st.caption("Responde el acertijo para demostrar que eres digno:")
-                
+
                 riddle = st.text_input("Imperio hexagonal y perfecto, almaceno recursos valiosos como un campeón. Si intentas saquear mis recursos, vas a gritar y correr. ¿Qué soy?.")
-                
+
                 if st.button("Reclamar el Trono"):
                     if riddle.strip().lower() in ["panal", "un panal", "el panal", "abeja", "la abeja", "una abeja"]:
                         st.success("¡El sello se rompe!")
