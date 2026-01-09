@@ -15,71 +15,148 @@ engine = get_engine()
 st.title("⚔️ Juegos de Caballeros: The Leaderboard")
 
 # CREAMOS LAS PESTAÑAS
-tab_carga, tab_stats, tab_historial = st.tabs(["📝 Cargar Partida", "🏆 Salón de la Fama", "📜 Historial"])
+tab_sesion, tab_partida, tab_stats, tab_historial = st.tabs(["🫱🏻‍🫲🏻 Nueva Sesión", "📝 Cargar Partida", "🏆 Salón de la Fama", "📜 Historial"])
 
 # ==============================================================================
-# PESTAÑA 1: CARGA DE DATOS
+# PESTAÑA 1: NUEVA SESIÓN
 # ==============================================================================
-with tab_carga:
+with tab_sesion:
+    st.header("Planificar la Noche 🌙")
+    st.caption("Primero crea la juntada, luego carga las partidas en la siguiente pestaña.")
+    
+    # Traemos los anfitriones (nicknames)
+    try:
+        with engine.connect() as conn:
+            df_hosts = pd.read_sql("SELECT nickname, player_id FROM players WHERE active = TRUE", conn)
+    except Exception as e:
+        st.error("Error de conexión.")
+        st.stop()
+        
+    host_map = dict(zip(df_hosts['nickname'], df_hosts['player_id']))
+
+    with st.form("session_form"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            sess_date = st.date_input("Fecha de la Juntada", date.today())
+            sess_host = st.selectbox("Anfitrión (Casa de...)", options=df_hosts['nickname'])
+            sess_attendees = st.number_input("Cantidad de Personas (Total)", min_value=1, value=4, step=1)
+        
+        with col2:
+            sess_food = st.text_input("Comida", placeholder="Ej: Pizzas a la parrilla, Asado, Empanadas...")
+            sess_cost = st.number_input("Gasto por cabeza ($)", min_value=0, step=1000)
+
+        submit_session = st.form_submit_button("🧝🏻‍♂️ Iniciar Cofradía de Caballeros")
+    
+    if submit_session:
+        try:
+            with engine.connect() as conn:
+                # Verificamos si ya existe una sesión esa fecha
+                check_query = text("SELECT session_id FROM sessions WHERE date = :d")
+                existing = conn.execute(check_query, {"d": sess_date}).fetchone()
+                
+                if existing:
+                    st.warning(f"Ya existe una cofradía registrada para el {sess_date.strftime('%d/%m/%Y')}. Ve a 'Cargar Partida' o usa otra fecha.")
+                else:
+                    insert_query = text("""
+                        INSERT INTO sessions (date, host_id, food, cost_per_person, total_attendees)
+                        VALUES (:d, :h, :f, :c, :a)
+                    """)
+                    conn.execute(insert_query, {
+                        "d": sess_date,
+                        "h": host_map[sess_host],
+                        "f": sess_food,
+                        "c": sess_cost,
+                        "a": sess_attendees
+                    })
+                    conn.commit()
+                    st.success(f"Cofradía iniciada en casa de {sess_host}! Ahora pueden cargar partidas.")
+                    st.balloons()
+        except Exception as e:
+            st.error(f"Error: {e}")
+   
+# ==============================================================================
+# PESTAÑA 2: CARGA DE DATOS
+# ==============================================================================
+
+with tab_partida:
     st.header("Registrar Nueva Batalla 🗡️🏹")
     
+
     # 1. Cargar datos auxiliares
     try:
         with engine.connect() as conn:
+            # 1. Traer Sesiones Disponibles (Últimas 10)
+            # Mostramos: "Fecha - Casa de [Host]"
+            sessions_query = """
+                SELECT s.session_id, s.date, p.nickname as host 
+                FROM sessions s
+                JOIN players p ON s.host_id = p.player_id
+                ORDER BY s.date DESC LIMIT 10
+            """
+            df_sessions = pd.read_sql(sessions_query, conn)
+
             df_players = pd.read_sql("SELECT player_id, nickname FROM players WHERE active = TRUE", conn)
-            df_games = pd.read_sql("SELECT game_id, name FROM games", conn)
+            df_games = pd.read_sql("SELECT game_id, name FROM games WHERE name <> 'Jugar con tu señora'", conn)
     except Exception as e:
-        st.error(f"Error de conexión: {e}")
+        st.error(f"Error cargando listas: {e}")
         st.stop()
 
-    player_map = dict(zip(df_players['nickname'], df_players['player_id']))
-    game_map = dict(zip(df_games['name'], df_games['game_id']))
-
-    with st.form("entry_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            session_date = st.date_input("Fecha", date.today())
-            host_name = st.selectbox("Anfitrión", options=df_players['nickname'])
-        with col2:
-            game_name = st.selectbox("Juego", options=df_games['name'])
-            win_type = st.select_slider("Tipo de Victoria", options=["Normal", "Clutch (Sufrida)", "Paliza"], value="Normal")
-
-        st.divider()
-        players_selected = st.multiselect("Jugadores", options=df_players['nickname'])
-        winner_name = st.selectbox("Ganador", options=players_selected if players_selected else df_players['nickname'])
+    if df_sessions.empty:
+        st.warning("No hay sesiones activas. Crea una en la pestaña 'Nueva Sesión' antes de cargar partidas.")
+    else:
+        # Crear lista legible para el dropdown de sesiones
+        df_sessions['label'] = df_sessions.apply(lambda x: f"{x['date'].strftime('%d/%m/%Y')} - 🏠 {x['host']}", axis=1)
+        session_map = dict(zip(df_sessions['label'], df_sessions['session_id']))
         
-        submitted = st.form_submit_button("💾 Guardar Partida")
+        player_map = dict(zip(df_players['nickname'], df_players['player_id']))
+        game_map = dict(zip(df_games['name'], df_games['game_id']))
 
-    if submitted:
-        if not players_selected:
-            st.warning("⚠️ Selecciona jugadores.")
-        elif winner_name not in players_selected:
-            st.error("⚠️ El ganador debe haber jugado.")
-        else:
-            try:
-                with engine.connect() as conn:
-                    with conn.begin():
-                        # 1. Crear Sesión si no existe
-                        if session_date not in [s.date for s in conn.execute(text("SELECT date FROM sessions")).fetchall()]:
-                            q_sess = text("INSERT INTO sessions (date, host_id) VALUES (:d, :h) RETURNING session_id")
-                            sess_id = conn.execute(q_sess, {"d": session_date, "h": player_map[host_name]}).fetchone()[0]
-                        else:
-                            sess_id = conn.execute(text("SELECT session_id FROM sessions WHERE date = :d"), {"d": session_date}).fetchone()[0]
-                        
-                        # 2. Crear Match
-                        q_match = text("INSERT INTO matches (session_id, game_id, winner_id, win_type) VALUES (:s, :g, :w, :wt) RETURNING match_id")
-                        match_id = conn.execute(q_match, {"s": sess_id, "g": game_map[game_name], "w": player_map[winner_name], "wt": win_type}).fetchone()[0]
-                        
-                        # 3. Participantes
-                        q_part = text("INSERT INTO match_participants (match_id, player_id, rank) VALUES (:m, :p, :r)")
-                        for p in players_selected:
-                            rank = 1 if p == winner_name else 2
-                            conn.execute(q_part, {"m": match_id, "p": player_map[p], "r": rank})
+        with st.form("entry_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                session_date = st.date_input("Fecha", date.today())
+                host_name = st.selectbox("Anfitrión", options=df_players['nickname'])
+            with col2:
+                game_name = st.selectbox("Juego", options=df_games['name'])
+                win_type = st.select_slider("Tipo de Victoria", options=["Normal", "Clutch (Sufrida)", "Paliza"], value="Normal")
+
+            st.divider()
+            players_selected = st.multiselect("Jugadores", options=df_players['nickname'])
+            winner_name = st.selectbox("Ganador", options=players_selected if players_selected else df_players['nickname'])
+            
+            submitted = st.form_submit_button("💾 Guardar Partida")
+
+        if submitted:
+            if not players_selected:
+                st.warning("⚠️ Selecciona jugadores.")
+            elif winner_name not in players_selected:
+                st.error("⚠️ El ganador debe haber jugado.")
+            else:
+                try:
+                    with engine.connect() as conn:
+                        with conn.begin():
+                            # 1. Crear Sesión si no existe
+                            if session_date not in [s.date for s in conn.execute(text("SELECT date FROM sessions")).fetchall()]:
+                                q_sess = text("INSERT INTO sessions (date, host_id) VALUES (:d, :h) RETURNING session_id")
+                                sess_id = conn.execute(q_sess, {"d": session_date, "h": player_map[host_name]}).fetchone()[0]
+                            else:
+                                sess_id = conn.execute(text("SELECT session_id FROM sessions WHERE date = :d"), {"d": session_date}).fetchone()[0]
                             
-                st.success("✅ Partida registrada correctamente")
-                st.balloons()
-            except Exception as e:
-                st.error(f"Error al guardar: {e}")
+                            # 2. Crear Match
+                            q_match = text("INSERT INTO matches (session_id, game_id, winner_id, win_type) VALUES (:s, :g, :w, :wt) RETURNING match_id")
+                            match_id = conn.execute(q_match, {"s": sess_id, "g": game_map[game_name], "w": player_map[winner_name], "wt": win_type}).fetchone()[0]
+                            
+                            # 3. Participantes
+                            q_part = text("INSERT INTO match_participants (match_id, player_id, rank) VALUES (:m, :p, :r)")
+                            for p in players_selected:
+                                rank = 1 if p == winner_name else 2
+                                conn.execute(q_part, {"m": match_id, "p": player_map[p], "r": rank})
+                                
+                    st.success("✅ Partida registrada correctamente")
+                    st.balloons()
+                except Exception as e:
+                    st.error(f"Error al guardar: {e}")
 
 # ==============================================================================
 # PESTAÑA 2: ESTADÍSTICAS
