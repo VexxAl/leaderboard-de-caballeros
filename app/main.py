@@ -112,51 +112,55 @@ with tab_partida:
         player_map = dict(zip(df_players['nickname'], df_players['player_id']))
         game_map = dict(zip(df_games['name'], df_games['game_id']))
 
-        with st.form("entry_form"):
+        with st.form("match_form"):
             col1, col2 = st.columns(2)
+            
             with col1:
-                session_date = st.date_input("Fecha", date.today())
-                host_name = st.selectbox("Anfitrión", options=df_players['nickname'])
-            with col2:
+                # AQUÍ SELECCIONAN LA SESIÓN POR FECHA
+                selected_session_label = st.selectbox("Seleccionar Juntada", options=df_sessions['label'])
                 game_name = st.selectbox("Juego", options=df_games['name'])
-                win_type = st.select_slider("Tipo de Victoria", options=["Normal", "Clutch (Sufrida)", "Paliza"], value="Normal")
+            
+            with col2:
+                duration = st.number_input("Duración (minutos) ⏱️", min_value=5, value=45, step=5)
+                win_type = st.select_slider("Intensidad", options=["Normal", "Clutch (Sufrida)", "Paliza"], value="Normal")
 
             st.divider()
-            players_selected = st.multiselect("Jugadores", options=df_players['nickname'])
-            winner_name = st.selectbox("Ganador", options=players_selected if players_selected else df_players['nickname'])
+            players_selected = st.multiselect("Jugadores en la mesa", options=df_players['nickname'])
+            winner_name = st.selectbox("Ganador", options=players_selected if players_selected else ["Selecciona jugadores primero"])
             
-            submitted = st.form_submit_button("💾 Guardar Partida")
+            submitted_match = st.form_submit_button("💾 Guardar Resultado")
 
-        if submitted:
+        if submitted_match:
             if not players_selected:
-                st.warning("⚠️ Selecciona jugadores.")
+                st.warning("⚠️ Faltan jugadores.")
             elif winner_name not in players_selected:
-                st.error("⚠️ El ganador debe haber jugado.")
+                st.error("⚠️ El ganador debe estar en la mesa.")
             else:
                 try:
+                    session_id = session_map[selected_session_label]
+                    game_id = game_map[game_name]
+                    winner_id = player_map[winner_name]
+                    
                     with engine.connect() as conn:
                         with conn.begin():
-                            # 1. Crear Sesión si no existe
-                            if session_date not in [s.date for s in conn.execute(text("SELECT date FROM sessions")).fetchall()]:
-                                q_sess = text("INSERT INTO sessions (date, host_id) VALUES (:d, :h) RETURNING session_id")
-                                sess_id = conn.execute(q_sess, {"d": session_date, "h": player_map[host_name]}).fetchone()[0]
-                            else:
-                                sess_id = conn.execute(text("SELECT session_id FROM sessions WHERE date = :d"), {"d": session_date}).fetchone()[0]
+                            # Insertar Match con Duración
+                            q_match = text("""
+                                INSERT INTO matches (session_id, game_id, winner_id, win_type, duration_minutes) 
+                                VALUES (:s, :g, :w, :wt, :dur) RETURNING match_id
+                            """)
+                            match_id = conn.execute(q_match, {
+                                "s": session_id, "g": game_id, "w": winner_id, "wt": win_type, "dur": duration
+                            }).fetchone()[0]
                             
-                            # 2. Crear Match
-                            q_match = text("INSERT INTO matches (session_id, game_id, winner_id, win_type) VALUES (:s, :g, :w, :wt) RETURNING match_id")
-                            match_id = conn.execute(q_match, {"s": sess_id, "g": game_map[game_name], "w": player_map[winner_name], "wt": win_type}).fetchone()[0]
-                            
-                            # 3. Participantes
+                            # Insertar Participantes
                             q_part = text("INSERT INTO match_participants (match_id, player_id, rank) VALUES (:m, :p, :r)")
                             for p in players_selected:
                                 rank = 1 if p == winner_name else 2
                                 conn.execute(q_part, {"m": match_id, "p": player_map[p], "r": rank})
                                 
-                    st.success("✅ Partida registrada correctamente")
-                    st.balloons()
+                    st.success("✅ Partida registrada! Seguimos jugando...")
                 except Exception as e:
-                    st.error(f"Error al guardar: {e}")
+                    st.error(f"Error grabando partida: {e}")
 
 # ==============================================================================
 # PESTAÑA 2: ESTADÍSTICAS
