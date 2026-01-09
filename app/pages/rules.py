@@ -2,6 +2,9 @@ import streamlit as st
 
 st.set_page_config(page_title="Reglamento", page_icon="📜", layout="centered")
 
+if st.button("⬅️ Volver al Tablero"):
+    st.switch_page("main.py")
+    
 st.title("📜 El Código de los Caballeros")
 st.caption("Normas vigentes aprobadas por la Mesa Chica para el ciclo 2026.")
 
