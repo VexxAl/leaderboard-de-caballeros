@@ -27,19 +27,38 @@ with tab_sesion:
     # Traemos los anfitriones (nicknames)
     try:
         with engine.connect() as conn:
-            df_hosts = pd.read_sql("SELECT nickname, player_id FROM players WHERE active = TRUE", conn)
+            query_hosts = """
+                SELECT nickname, player_id 
+                FROM players 
+                WHERE active = TRUE OR role = 'Sede' 
+                ORDER BY nickname ASC
+            """
+            df_hosts = pd.read_sql(query_hosts, conn)
     except Exception as e:
         st.error("Error de conexión.")
         st.stop()
-        
+    
+    # Mapa de hosts existentes
     host_map = dict(zip(df_hosts['nickname'], df_hosts['player_id']))
+
+    # Preparamos la lista del desplegable agregando la opción de crear uno nuevo
+    lista_hosts = df_hosts['nickname'].tolist()
+    opcion_nuevo = "➕ Nuevo Lugar / Anfitrión..."
+    lista_hosts.append(opcion_nuevo)
 
     with st.form("session_form"):
         col1, col2 = st.columns(2)
         
         with col1:
             sess_date = st.date_input("Fecha de la Juntada", date.today())
-            sess_host = st.selectbox("Anfitrión (Casa de...)", options=df_hosts['nickname'])
+            sess_host = st.selectbox("Anfitrión / Lugar", options=lista_hosts)
+
+            # Si eligen crear nuevo, mostramos el input de texto
+            new_host_name = None
+            if sess_host == opcion_nuevo:
+                new_host_name = st.text_input("Nombre del Nuevo Lugar", placeholder="Ej: Bar Temple, Casa de Juan...")
+                st.caption("Este lugar se guardará en la base de datos para futuras juntadas.")
+
             sess_attendees = st.number_input("Cantidad de Personas (Total)", min_value=1, value=4, step=1)
         
         with col2:
@@ -58,6 +77,28 @@ with tab_sesion:
                 if existing:
                     st.warning(f"Ya existe una cofradía registrada para el {sess_date.strftime('%d/%m/%Y')}. Ve a 'Cargar Partida' o usa otra fecha.")
                 else:
+                    # Si es nuevo host, lo insertamos primero
+                    final_host_id = None
+                    final_host_name = ""
+
+                    if sess_host == opcion_nuevo:
+                        if new_host_name:
+                            # Insertar nuevo host
+                            insert_host_query = text("""
+                                INSERT INTO players (name, nickname, role, active, created_at, owned_games)
+                                VALUES (:n, :n, 'Sede', FALSE, NOW(), 0) 
+                                RETURNING player_id
+                            """)
+                            result = conn.execute(insert_host_query, {"n": new_host_name})
+                            final_host_id = result.fetchone()[0]
+                            final_host_name = new_host_name
+                        else:
+                            st.error("Debes ingresar un nombre para el nuevo lugar.")
+                            st.stop()
+                    else:
+                        final_host_id = host_map[sess_host]
+                        final_host_name = sess_host
+                    
                     insert_query = text("""
                         INSERT INTO sessions (date, host_id, food, cost_per_person, total_attendees)
                         VALUES (:d, :h, :f, :c, :a)
@@ -106,7 +147,7 @@ with tab_partida:
         st.warning("No hay sesiones activas. Crea una en la pestaña 'Nueva Sesión' antes de cargar partidas.")
     else:
         # Crear lista legible para el dropdown de sesiones
-        df_sessions['label'] = df_sessions.apply(lambda x: f"{x['date'].strftime('%d/%m/%Y')} - 🏠 {x['host']}", axis=1)
+        df_sessions['label'] = df_sessions.apply(lambda x: f"{x['date'].strftime('%d/%m/%Y')} - 📍 {x['host']}", axis=1)
         session_map = dict(zip(df_sessions['label'], df_sessions['session_id']))
         
         player_map = dict(zip(df_players['nickname'], df_players['player_id']))
@@ -163,7 +204,7 @@ with tab_partida:
                     st.error(f"Error grabando partida: {e}")
 
 # ==============================================================================
-# PESTAÑA 2: ESTADÍSTICAS
+# PESTAÑA 3: ESTADÍSTICAS
 # ==============================================================================
 with tab_stats:
     st.header("Estadísticas Generales 📊")
@@ -218,7 +259,7 @@ with tab_stats:
         st.error(f"Error calculando stats: {e}")
 
 # ==============================================================================
-# PESTAÑA 3: HISTORIAL
+# PESTAÑA 4: HISTORIAL
 # ==============================================================================
 with tab_historial:
     st.header("Historial de Batallas 📜")
