@@ -173,11 +173,12 @@ def render_dungeon():
                 riddle = st.text_input("Imperio hexagonal y perfecto, almaceno recursos valiosos como un campeón. Si intentas robar mis recursos, vas a correr y putear mientras muchas mueren por mí. ¿Qué soy?.")
 
                 if st.button("Revelar el Secreto 🗝️"):
-                    if riddle.strip().lower() in ["panal", "un panal", "el panal", "abeja", "la abeja", "una abeja"]:
+                    if riddle.strip().lower() in ["panal", "un panal", "el panal", "abeja", "la abeja", "una abeja", "colmena", "la colmena", "una colmena"]:
                         st.success("¡El cofre se abre!")
                         time.sleep(1)
                         st.session_state.dungeon_stage = 'unlocked'
                         st.rerun()
                     else:
-                        st.error("Respuesta incorrecta.\npista: no soy un juego de mesa. (cerca mío vas a escuchar 'bss, bss, bss')")
+                        st.error("Respuesta incorrecta.")
+                        st.info("Pista: no soy un juego de mesa. (cerca mío vas a escuchar 'bss, bss, bss')")
                 st.markdown('</div>', unsafe_allow_html=True)
