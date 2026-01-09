@@ -18,7 +18,7 @@ st.title("⚔️ Juegos de Caballeros: The Leaderboard")
 col_nav1, col_nav2 = st.columns([6, 1])
 with col_nav2:
     if st.button("📜 Ver Reglas"):
-        st.switch_page("pages/reglas.py")
+        st.switch_page("pages/rules.py")
 
 # CREAMOS LAS PESTAÑAS
 tab_sesion, tab_partida, tab_stats, tab_historial = st.tabs(["🫱🏻‍🫲🏻 Nueva Sesión", "📝 Cargar Partida", "🏆 Salón de la Fama", "📜 Historial"])
