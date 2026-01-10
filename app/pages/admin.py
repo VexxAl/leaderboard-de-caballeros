@@ -12,7 +12,7 @@ st.set_page_config(page_title="Admin", page_icon="🛠️", layout="centered")
 
 # --- LOGIN SIMPLE Y DIRECTO ---
 
-col1, col2, = st.columns([8,2])
+col1, col2, = st.columns([.7,.3])
 with col1:
     st.title("🛡️ Panel de Administración")
 with col2:
@@ -42,8 +42,6 @@ if not st.session_state.admin_access_granted:
 
 # --- SI LLEGA ACÁ, ES PORQUE YA ENTRÓ ---
 st.toast("Bienvenido.", icon="🔓")
-
-st.divider()
 
 # --- INICIO DEL PANEL DE DATOS ---
 engine = get_engine()
