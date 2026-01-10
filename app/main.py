@@ -186,7 +186,7 @@ with tab_partida:
         st.divider()
 
         # Botón normal
-        if st.button("💾 Guardar Partida", type="secondary", width="stretch", shortcut="Enter"):
+        if st.button("💾 Guardar Partida", type="secondary", width=200):
             if not players_selected:
                 st.warning("⚠️ Faltan jugadores.")
             elif not winner_name:
