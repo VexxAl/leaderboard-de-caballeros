@@ -42,20 +42,6 @@ if st.button("🏠 Volver a la Tabla Principal"):
 st.divider()
 st.subheader("🛠️ Panel de Gestión")
 
-
-# ==========================================================================
-# 🛠️ EL PANEL REAL
-# ==========================================================================
-
-st.sidebar.title("🛠️ Admin Tools")
-
-# Botón para salir y bloquear todo de nuevo
-if st.sidebar.button("🔒 Bloquear Panel (Salir)"):
-    st.session_state.admin_access_granted = False # Olvidamos el login
-    st.rerun()
-
-st.title("🛠️ Panel de Administración")
-
 # --- INICIO DEL PANEL DE DATOS ---
 engine = get_engine()
 tab_caballeros, tab_juegos, tab_db = st.tabs(["🎩 Gestión de Caballeros", "🃏 Carga de Juegos", "🗄️ Base de Datos"])

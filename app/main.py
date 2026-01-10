@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import text
 from datetime import date
+import time
 
 from app.database import get_engine 
 
@@ -12,10 +13,13 @@ st.set_page_config(page_title="Noches de Caballeros", page_icon="⚔️", layout
 engine = get_engine()
 
 # --- TÍTULO ---
-st.title("⚔️ Juegos de Caballeros: The Leaderboard")
 
 # --- NAVEGACIÓN ---
-col_nav1, col_nav2 = st.columns([6, 1])
+col_nav1, col_nav2 = st.columns([8, 1])
+
+with col_nav1:
+    st.title("⚔️ Juegos de Caballeros: The Leaderboard")
+
 with col_nav2:
     if st.button("📜 Ver Reglas"):
         st.switch_page("pages/rules.py")
@@ -71,7 +75,7 @@ with tab_sesion:
             sess_food = st.text_input("Comida", placeholder="Ej: Pizzas a la parrilla, Asado, Empanadas...")
             sess_cost = st.number_input("Gasto por cabeza ($)", min_value=0, step=1000)
 
-        submit_session = st.form_submit_button("🧝🏻‍♂️ Iniciar Cofradía de Caballeros")
+        submit_session = st.form_submit_button("🧝🏻‍♂️ Iniciar Cofradía")
     
     if submit_session:
         try:
@@ -129,7 +133,6 @@ with tab_sesion:
 with tab_partida:
     st.header("Registrar Nueva Batalla 🗡️🏹")
     
-
     # 1. Cargar datos auxiliares
     try:
         with engine.connect() as conn:
@@ -153,33 +156,41 @@ with tab_partida:
         st.warning("No hay sesiones activas. Crea una en la pestaña 'Nueva Sesión' antes de cargar partidas.")
     else:
         # Crear lista legible para el dropdown de sesiones
-        df_sessions['label'] = df_sessions.apply(lambda x: f"{x['date'].strftime('%d/%m/%Y')} - 📍 {x['host']}", axis=1)
+        df_sessions['label'] = df_sessions.apply(lambda x: f"{x['date'].strftime('%d/%m/%Y')}  -📍 {x['host']}", axis=1)
         session_map = dict(zip(df_sessions['label'], df_sessions['session_id']))
         
         player_map = dict(zip(df_players['nickname'], df_players['player_id']))
         game_map = dict(zip(df_games['name'], df_games['game_id']))
 
-        with st.form("match_form"):
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # AQUÍ SELECCIONAN LA SESIÓN POR FECHA
-                selected_session_label = st.selectbox("Seleccionar Juntada", options=df_sessions['label'])
-                game_name = st.selectbox("Juego", options=df_games['name'])
-            
-            with col2:
-                duration = st.number_input("Duración (minutos) ⏱️", min_value=5, value=45, step=5)
-                win_type = st.select_slider("Intensidad", options=["Normal", "Clutch (Sufrida)", "Paliza"], value="Normal")
+        # Formulario de carga de partida
+        col1, col2 = st.columns(2)
+        with col1:
+            selected_session_label = st.selectbox("Seleccionar Juntada", options=df_sessions['label'])
+            game_name = st.selectbox("Juego", options=df_games['name'])
+        
+        with col2:
+            duration = st.number_input("Duración (minutos) ⏱️", min_value=5, value=45, step=5)
+            win_type = st.select_slider("Intensidad", options=["Normal", "Clutch (Sufrida)", "Paliza"], value="Normal")
 
-            st.divider()
-            players_selected = st.multiselect("Jugadores en la mesa", options=df_players['nickname'])
-            winner_name = st.selectbox("Ganador", options=players_selected if players_selected else ["Selecciona jugadores primero"])
-            
-            submitted_match = st.form_submit_button("💾 Guardar Resultado")
+        st.divider()
 
-        if submitted_match:
+        # 1. Seleccionamos jugadores..
+        players_selected = st.multiselect("Jugadores en la mesa", options=df_players['nickname'])
+        
+        # Si no hay jugadores seleccionados, mostramos un mensaje o lista vacía
+        winner_options = players_selected if players_selected else []
+        
+        # 2. Deshabilitamos el selector si no hay jugadores para evitar errores visuales
+        winner_name = st.selectbox("Ganador", options=winner_options, disabled=not players_selected)
+        
+        st.divider()
+
+        # Botón normal
+        if st.button("💾 Guardar Resultado", type="primary", use_container_width=True):
             if not players_selected:
                 st.warning("⚠️ Faltan jugadores.")
+            elif not winner_name:
+                st.warning("⚠️ Debes elegir un ganador.")
             elif winner_name not in players_selected:
                 st.error("⚠️ El ganador debe estar en la mesa.")
             else:
@@ -190,7 +201,7 @@ with tab_partida:
                     
                     with engine.connect() as conn:
                         with conn.begin():
-                            # Insertar Match con Duración
+                            # Insertar Match
                             q_match = text("""
                                 INSERT INTO matches (session_id, game_id, winner_id, win_type, duration_minutes) 
                                 VALUES (:s, :g, :w, :wt, :dur) RETURNING match_id
@@ -206,6 +217,8 @@ with tab_partida:
                                 conn.execute(q_part, {"m": match_id, "p": player_map[p], "r": rank})
                                 
                     st.success("✅ Partida registrada! Seguimos jugando...")
+                    time.sleep(1) 
+                    st.rerun() # Limpiamos la pantalla
                 except Exception as e:
                     st.error(f"Error grabando partida: {e}")
 
