@@ -285,7 +285,7 @@ with tab_historial:
     try:
         with engine.connect() as conn:
             historial = pd.read_sql("""
-                SELECT s.date as Fecha, m.duration_minutes as Duración, g.name as Juego, p.nickname as Ganador, m.win_type AS Tipo de Victoria
+                SELECT s.date as Fecha, m.duration_minutes as Duración, g.name as Juego, p.nickname as Ganador, m.win_type AS "Tipo de Victoria"
                 FROM matches m
                 JOIN games g ON m.game_id = g.game_id
                 JOIN players p ON m.winner_id = p.player_id
