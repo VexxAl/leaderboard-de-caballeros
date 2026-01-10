@@ -14,7 +14,7 @@ engine = get_engine()
 # --- TÍTULO ---
 st.title("⚔️ Juegos de Caballeros: The Leaderboard")
 
-# --- NAVEGACIÓN (Botonera) ---
+# --- NAVEGACIÓN ---
 col_nav1, col_nav2 = st.columns([6, 1])
 with col_nav2:
     if st.button("📜 Ver Reglas"):

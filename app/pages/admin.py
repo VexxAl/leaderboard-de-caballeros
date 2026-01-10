@@ -35,7 +35,7 @@ if not st.session_state.admin_access_granted:
 # --- SI LLEGA ACÁ, ES PORQUE YA ENTRÓ ---
 st.toast("Bienvenido.", icon="🔓")
 
-# Botón para volver al inicio (ya que no habrá menú lateral)
+# Botón para volver al inicio
 if st.button("🏠 Volver a la Tabla Principal"):
     st.switch_page("main.py")
 
@@ -51,7 +51,6 @@ st.sidebar.title("🛠️ Admin Tools")
 
 # Botón para salir y bloquear todo de nuevo
 if st.sidebar.button("🔒 Bloquear Panel (Salir)"):
-    reset_dungeon()
     st.session_state.admin_access_granted = False # Olvidamos el login
     st.rerun()
 
